@@ -20,10 +20,6 @@
 #define TRUE            1
 #define FALSE           0
 
-
-/* Define some constants */
-#define APP_NAME        "CHATSRV" /* Name of applicaton */
-#define APP_VERSION     "0.5"     /* Version of application */
 #define MAX_THREADS     1000      /* Max. number of concurrent chat sessions */
 
 
@@ -61,9 +57,7 @@ void change_nickname(char *oldnickname, char *newnickname);
 void shutdown_server(int sig);
 int get_client_info_idx_by_sockfd(int sockfd);
 int get_client_info_idx_by_nickname(char *nickname);
-void display_help_page(void);
-void display_version_info(void);
-void show_gnu_banner(void);
+
 
 
 /*
@@ -80,16 +74,6 @@ int main(int argc, char *argv[])
 	/* Parse commandline args */
 	params = malloc(sizeof(cmd_params));
 	ret = parse_cmd_args(&argc, argv);
-	if (params->help)
-	{
-		display_help_page();
-		exit(0);
-	}
-	if (params->version)
-	{
-		display_version_info();
-		exit(0);
-	}
 	if (ret < 0)
 	{
 		if (ret == -2)
@@ -113,8 +97,6 @@ int main(int argc, char *argv[])
 	signal(SIGINT, shutdown_server);
 	signal(SIGTERM, shutdown_server);
 	
-	/* Show banner and stuff */
-	show_gnu_banner();	
 
 	/* Startup the server listener */
 	if (startup_server() < 0)
@@ -593,26 +575,9 @@ void send_welcome_msg(int sockfd)
 
 	/* Send welcome message to client */
 	memset(buffer, 0, 1024);
-	sprintf(buffer, "%s/---------------------------------------------\\%s\r\n", color_white, color_normal);
+	sprintf(buffer, "%s|  Connected to Server  |%s\r\n", color_white, color_normal);
 	sendto(cur->client_info->sockfd, buffer, strlen(buffer), 0,
 		(struct sockaddr *)&(cur->client_info->address), (socklen_t)socklen);
-	memset(buffer, 0, 1024);
-	sprintf(buffer, "%s|             W E L C O M E   T O             |%s\r\n", color_white, color_normal);
-	sendto(cur->client_info->sockfd, buffer, strlen(buffer), 0,
-		(struct sockaddr *)&(cur->client_info->address), (socklen_t)socklen);
-	memset(buffer, 0, 1024);
-	sprintf(buffer, "%s|                  %s %s                |%s\r\n", color_white, APP_NAME, APP_VERSION, color_normal);
-	sendto(cur->client_info->sockfd, buffer, strlen(buffer), 0,
-		(struct sockaddr *)&(cur->client_info->address), (socklen_t)socklen);
-	memset(buffer, 0, 1024);
-	sprintf(buffer, "%s|          Written by Andre Gasser 2012       |%s\r\n", color_white, color_normal);
-	sendto(cur->client_info->sockfd, buffer, strlen(buffer), 0,
-		(struct sockaddr *)&(cur->client_info->address), (socklen_t)socklen);
-	memset(buffer, 0, 1024);
-	sprintf(buffer, "%s\\---------------------------------------------/%s\r\n", color_white, color_normal);
-	sendto(cur->client_info->sockfd, buffer, strlen(buffer), 0,
-		(struct sockaddr *)&(cur->client_info->address), (socklen_t)socklen);
-		
 	/* Unlock entry */
 	pthread_mutex_unlock(cur->mutex);
 }
@@ -778,70 +743,6 @@ void shutdown_server(int sig)
 }
 
 
-/* 
- * Display a helpful page.
- */
-void display_help_page(void)
-{
-	show_gnu_banner();
-	printf("\n");
-	printf("Syntax:\n");
-	printf("-------\n");
-	printf("%s [OPTIONS]\n", APP_NAME);
-	printf("\n");
-	printf("Parameters:\n");
-	printf("-----------\n");
-	printf("%s currently supports the following parameters:\n\n", APP_NAME);
-	printf("--ip=<ip address>, -i <ip address>         Specifies the ip address which shall be\n");
-	printf("                                           used by %s. If no ip address\n", APP_NAME); 
-	printf("                                           is specified, 127.0.0.1 will be used by default.\n");
-	printf("--port=<port number>, -p <port number>     Specifies the TCP port to be used by %s.\n", APP_NAME);
-	printf("                                           If no port is specified, port 5555 will be\n");
-	printf("                                           used by default.\n");
-	printf("--loglevel=<level>, -l <level>             Specifies the desired log level. The\n");
-	printf("                                           following levels are supported:\n");
-	printf("                                             1 = ERROR (Log errors only)\n");
-	printf("                                             2 = INFO (Log additional information)\n");
-	printf("                                             3 = DEBUG (Log debug level information)\n");
-	printf("--version, -v                              Displays version information.\n");
-	printf("--help, -h                                 Displays this help page.\n");
-	printf("\n");
-    printf("Bug Reports and Other Comments:\n");
-    printf("-------------------------------\n");
-    printf("I'm glad to receive comments and bug reports on this tool. You can best reach me\n");
-    printf("by email or IM using Jabber:\n\n");
-    printf("+ E-Mail:     andre.gasser@gmx.ch\n");
-    printf("+ Jabber:     sh0ka@jabber.ccc.de\n");
-    printf("\n");
-    printf("Source Code:\n");
-    printf("------------\n");
-    printf("Fetch the latest version from:\n");
-    printf("+ GitHub:     https://github.com/shoka/chatsrv\n\n");
-}
 
-
-/* 
- * Display version information.
- */
-void display_version_info(void)
-{
-	printf("%s %s\n", APP_NAME, APP_VERSION);
-	printf("Copyright (C) 2012 André Gasser\n");
-	printf("License GPLv3: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>\n");
-	printf("This is free software: you are free to change and redistribute it.\n");
-	printf("There is NO WARRANTY, to the extent permitted by law.\n");
-}
-
-
-/*
- * Display a short GNU banner.
- */
-void show_gnu_banner(void)
-{
-	printf("%s %s  Copyright (C) 2012  André Gasser\n", APP_NAME, APP_VERSION);
-    printf("This program comes with ABSOLUTELY NO WARRANTY.\n");
-    printf("This is free software, and you are welcome to redistribute it\n");
-    printf("under certain conditions.\n");
-}
 
 
