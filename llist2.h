@@ -1,5 +1,4 @@
 #include <pthread.h>
-#include "bool.h"
 
 typedef struct client_info
 {

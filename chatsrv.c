@@ -15,8 +15,10 @@
 #include <limits.h>
 #include "log.h"
 #include "llist2.h"
-#include "bool.h"
 #include "colors.h"
+
+#define TRUE            1
+#define FALSE           0
 
 
 /* Define some constants */

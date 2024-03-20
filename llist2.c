@@ -5,6 +5,8 @@
 #include "llist2.h"
 #include "log.h"
 
+#define TRUE            1
+#define FALSE           0
 
 /*
  * Initializes the first element of the list.
