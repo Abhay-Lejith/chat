@@ -369,8 +369,6 @@ void process_msg(char *message, int self_sockfd)
 	regex_t regex_quit;
 	regex_t regex_nick;
 	regex_t regex_msg;
-	regex_t regex_me;
-	regex_t regex_who;
 	int ret;
 	char newnick[20];
 	char oldnick[20];
@@ -398,8 +396,6 @@ void process_msg(char *message, int self_sockfd)
 	regcomp(&regex_quit, "^/quit$", REG_EXTENDED);
 	regcomp(&regex_nick, "^/nick ([a-zA-Z0-9_]{1,19})$", REG_EXTENDED);
 	regcomp(&regex_msg, "^/msg ([a-zA-Z0-9_]{1,19}) (.*)$", REG_EXTENDED);
-	regcomp(&regex_me, "^/me (.*)$", REG_EXTENDED);
-	regcomp(&regex_who, "^/who$", REG_EXTENDED);
 
 	/* Check if user wants to quit */
 	ret = regexec(&regex_quit, message, 0, NULL, 0);
@@ -425,7 +421,6 @@ void process_msg(char *message, int self_sockfd)
 		regfree(&regex_quit);
 		regfree(&regex_nick);
 		regfree(&regex_msg);
-		regfree(&regex_me);
 
 		/* Terminate this thread */		
 		pthread_exit(0);
@@ -491,53 +486,6 @@ void process_msg(char *message, int self_sockfd)
 		}
 	}
 	
-	/* Check if user wants to say something about himself */
-	ngroups = 2;
-	ret = regexec(&regex_me, message, ngroups, groups, 0);
-	if (ret == 0)
-	{
-		processed = TRUE;
-		
-		strcpy(buffer, list_entry->client_info->nickname);
-		
-		/* Prepare message */
-		len = groups[1].rm_eo - groups[1].rm_so;
-		strcat(buffer, " ");
-		strncat(buffer, message + groups[1].rm_so, len);
-			
-		/* Broadcast message */
-		send_broadcast_msg("%s%s%s\r\n", color_cyan, buffer, color_normal);
-		logline(LOG_INFO, buffer);
-	}
-
-	/* Check if user wants a listing of currently connected clients */
-	ret = regexec(&regex_who, message, 0, NULL, 0);
-	if (ret == 0)
-	{
-		processed = TRUE;
-
-		int socklen = sizeof(list_entry->client_info->address);
-
-		logline(LOG_INFO, "%s requested the client list", list_entry->client_info->nickname);
-
-		char **nicks = malloc(sizeof(*nicks) * 1000);
-		int i;
-		for (i = 0; i < 1000; i++)
-			nicks[i] = malloc(sizeof(**nicks) * 30);
-		int count = llist_get_nicknames(&list_start, nicks);
-
-		memset(buffer, 0, 1024);
-		for (i = 0; i < count; i++) {
-			sprintf(buffer, "%s%s%s%s", buffer, color_magenta, nicks[i], color_normal);
-			if(i != (count - 1)) sprintf(buffer, "%s, ", buffer);
-			if(i == (count - 1)) sprintf(buffer, "%s\r\n", buffer);
-			free(nicks[i]);
-		}
-		sendto(list_entry->client_info->sockfd, buffer, strlen(buffer), 0,
-				(struct sockaddr *)&(list_entry->client_info->address), (socklen_t)socklen);
-		free(nicks);
-	}
-	
 	/* Broadcast message */
 	if (processed == FALSE)
 	{
@@ -552,8 +500,7 @@ void process_msg(char *message, int self_sockfd)
 	regfree(&regex_quit);
 	regfree(&regex_nick);
 	regfree(&regex_msg);
-	regfree(&regex_me);
-	regfree(&regex_who);
+
 }
 
 
@@ -702,13 +649,6 @@ void shutdown_server(int sig)
 {
 	list_entry *cur = NULL;
 
-	if ((sig == SIGINT) || (sig == SIGTERM))
-	{
-		if (sig == SIGINT)
-			logline(LOG_INFO, "Server shutdown requested per SIGINT. Performing cleanup ops now.");
-		if (sig == SIGTERM)
-			logline(LOG_INFO, "Server shutdown requested per SIGTERM. Performing cleanup ops now.");
-		
 		/* Close all socket connections immediately */
 		logline(LOG_INFO, "Closing socket connections...");		
 		
@@ -739,7 +679,7 @@ void shutdown_server(int sig)
 		/* Exit process */		
 		logline(LOG_INFO, "Exiting. Byebye.");
 		exit(0);
-	}
+
 }
 
 

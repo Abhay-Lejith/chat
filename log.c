@@ -14,7 +14,6 @@ void logline(int loglevel, const char* format, ...)
 	if (loglevel <= global_loglevel)
 	{
 		char timestr[20];
-		char *loginfo;
 		struct tm *ptr;
 		time_t lt;
 
@@ -22,15 +21,7 @@ void logline(int loglevel, const char* format, ...)
 		ptr = localtime(&lt);
 		strftime(timestr, sizeof(timestr), "%Y-%m-%d %H:%M:%S", ptr);
 
-		switch (loglevel)
-		{
-			case LOG_ERROR: loginfo = "E"; break;
-			case LOG_INFO: loginfo = "I"; break;
-			case LOG_DEBUG: loginfo = "D"; break;
-			default: loginfo = "I"; 
-		}
-
-		printf("[%s %s] ", timestr, loginfo);
+		printf("[%s] ", timestr);
 		va_start(args, format);
 		vprintf(format, args);
 		va_end(args);
