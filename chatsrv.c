@@ -74,15 +74,6 @@ int main(int argc, char *argv[])
 	/* Parse commandline args */
 	params = malloc(sizeof(cmd_params));
 	ret = parse_cmd_args(&argc, argv);
-	if (ret < 0)
-	{
-		if (ret == -2)
-			logline(LOG_ERROR, "Error: Invalid port range specified (-p)");
-		if (ret == -6)
-			logline(LOG_ERROR, "Error: Invalid log level option specified (-l).");
-		logline(LOG_ERROR, "Use the -h option if you need help.");
-		exit(ret);
-	}
 	
 	/* Set log level */
 	switch (params->loglevel)
@@ -262,18 +253,10 @@ int parse_cmd_args(int *argc, char *argv[])
 		switch (c)
 		{
 			case 'i': params->ip = optarg; break;
-			case 'p':
-				params->port = atoi(optarg);
-				if ((params->port < 1) || (params->port > 65535))
-					return -2;
-				break;
+			case 'p': params->port = atoi(optarg); break;
 			case 'h': params->help = 1; break;
 			case 'v': params->version = 1; break;
-			case 'l':
-				params->loglevel = atoi(optarg);
-	            if ((params->loglevel < 1) || (params->loglevel > 3))
-	            	return -6;
-				break;
+			case 'l': params->loglevel = atoi(optarg); break;
 		}
 	}
 
