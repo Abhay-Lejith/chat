@@ -55,9 +55,6 @@ void send_private_msg(char* nickname, char* format, ...);
 void chomp(char *s);
 void change_nickname(char *oldnickname, char *newnickname);
 void shutdown_server(int sig);
-int get_client_info_idx_by_sockfd(int sockfd);
-int get_client_info_idx_by_nickname(char *nickname);
-
 
 
 int main(int argc, char *argv[])
@@ -256,7 +253,7 @@ void proc_client(int *arg)
 	
 	send_welcome_msg(sockfd);
 	
-	send_broadcast_msg("%sUser %s joined the chat.%s\r\n", color_magenta, list_entry->client_info->nickname, color_normal);
+	send_broadcast_msg("%sUser %s joined the chat.%s\r\n", magenta, list_entry->client_info->nickname, normal);
 
 	while (1)
 	{
@@ -335,7 +332,7 @@ void process_msg(char *message, int self_sockfd)
 	if (ret == 0)
 	{		
 		send_broadcast_msg("%sUser %s has left the chat server.%s\r\n", 
-			color_magenta, list_entry->client_info->nickname, color_normal);
+			magenta, list_entry->client_info->nickname, normal);
 		disp(LOG_INFO, "User %s has left the chat server.", list_entry->client_info->nickname);
 		pthread_mutex_lock(&curr_thread_count_mutex);
 		curr_thread_count--;
@@ -373,13 +370,13 @@ void process_msg(char *message, int self_sockfd)
 		if (nick_list_entry == NULL)
 		{
 			change_nickname(oldnick, newnick);
-			send_broadcast_msg("%s%s%s\r\n", color_yellow, buffer, color_normal);
+			send_broadcast_msg("%s%s%s\r\n", yellow, buffer, normal);
 			disp(LOG_INFO, buffer);
 		}
 		else
 		{
 			send_private_msg(oldnick, "%sCHATSRV: Cannot change nickname. Nickname already in use.%s\r\n", 
-				color_yellow, color_normal);
+				yellow, normal);
 			disp(LOG_INFO, "Private message from CHATSRV to %s: Cannot change nickname. Nickname already in use", 
 				oldnick);
 		}
@@ -399,8 +396,8 @@ void process_msg(char *message, int self_sockfd)
 		priv_list_entry = llist_find_by_nickname(&list_start, priv_nick);
 		if (priv_list_entry != NULL)
 		{
-			send_private_msg(priv_nick, "%s%s:%s %s%s%s\r\n", color_green, list_entry->client_info->nickname, 
-				color_normal, color_red, buffer, color_normal);
+			send_private_msg(priv_nick, "%s%s:%s %s%s%s\r\n", green, list_entry->client_info->nickname, 
+				normal, red, buffer, normal);
 			disp(LOG_INFO, "Private message from %s to %s: %s", 
 				list_entry->client_info->nickname, priv_nick, buffer);
 		}
@@ -408,7 +405,7 @@ void process_msg(char *message, int self_sockfd)
 		
 	if (processed == FALSE)
 	{
-		send_broadcast_msg("%s%s:%s %s\r\n", color_green, list_entry->client_info->nickname, color_normal, message);
+		send_broadcast_msg("%s%s:%s %s\r\n", green, list_entry->client_info->nickname, normal, message);
 		disp(LOG_INFO, "%s: %s", list_entry->client_info->nickname, message);
 	}
 
@@ -433,7 +430,7 @@ void send_welcome_msg(int sockfd)
 	pthread_mutex_lock(cur->mutex);
 	
 	memset(buffer, 0, 1024);
-	sprintf(buffer, "%s|  Connected to Server  |%s\r\n", color_white, color_normal);
+	sprintf(buffer, "%s|  Connected to Server  |%s\r\n", white, normal);
 	sendto(cur->client_info->sockfd, buffer, strlen(buffer), 0,
 		(struct sockaddr *)&(cur->client_info->address), (socklen_t)socklen);	
 	pthread_mutex_unlock(cur->mutex);

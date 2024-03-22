@@ -199,7 +199,6 @@ int llist_show(list_entry *list_start)
 
 	cur = list_start;
 	
-	disp(LOG_DEBUG, "---------- Client List Dump Begin ----------");
 	while (cur != NULL)
 	{		
 		pthread_mutex_lock(cur->mutex);
@@ -213,7 +212,6 @@ int llist_show(list_entry *list_start)
 				
 		cur = cur->next;
 	}
-	disp(LOG_DEBUG, "----------- Client List Dump End -----------");
 	
 	return 0;
 }
