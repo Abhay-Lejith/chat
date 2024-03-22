@@ -45,14 +45,14 @@ pthread_mutex_t curr_thread_count_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 
 
-int startup_server(void);
+int server_start(void);
 int parse_cmd_args(int *argc, char *argv[]);
-void proc_client(int *arg);
+void client_process(int *arg);
 void process_msg(char *message, int self_sockfd);
-void send_welcome_msg(int sockfd);
-void send_broadcast_msg(char* format, ...);
-void send_private_msg(char* nickname, char* format, ...);
-void chomp(char *s);
+void send_wlcm_msg(int sockfd);
+void send_bc_msg(char* format, ...);
+void send_pvt_msg(char* nickname, char* format, ...);
+void rm_newline(char *s);
 void change_nickname(char *oldnickname, char *newnickname);
 void shutdown_server(int sig);
 
@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
 	signal(SIGINT, shutdown_server);
 	signal(SIGTERM, shutdown_server);
 		
-	if (startup_server() < 0)
+	if (server_start() < 0)
 	{
 		disp(LOG_ERROR, "Error during server startup. Please consult debug log for details.");
 		exit(-1);
@@ -121,7 +121,7 @@ int main(int argc, char *argv[])
 									
 				ret = pthread_create(&threads[curr_thread_count],
 					NULL,
-					(void *)&proc_client, 
+					(void *)&client_process, 
 					(void *)&client_sockfd); 
 			
 				if (ret == 0)
@@ -158,7 +158,7 @@ int main(int argc, char *argv[])
 }
 
 
-int startup_server(void)
+int server_start(void)
 {
 	int optval = 1;
 		
@@ -233,7 +233,7 @@ int parse_cmd_args(int *argc, char *argv[])
 }
 
 
-void proc_client(int *arg)
+void client_process(int *arg)
 {
 	char buffer[1024];
 	char message[1024];
@@ -251,9 +251,9 @@ void proc_client(int *arg)
 	FD_ZERO(&readfds);
 	FD_SET(sockfd, &readfds);
 	
-	send_welcome_msg(sockfd);
+	send_wlcm_msg(sockfd);
 	
-	send_broadcast_msg("%sUser %s joined the chat.%s\r\n", magenta, list_entry->client_info->nickname, normal);
+	send_bc_msg("%sUser %s joined the chat.%s\r\n", magenta, list_entry->client_info->nickname, normal);
 
 	while (1)
 	{
@@ -271,7 +271,7 @@ void proc_client(int *arg)
 			len = recvfrom(sockfd, buffer, sizeof(buffer), 0, 
 				(struct sockaddr *)&list_entry->client_info->address, (socklen_t *)&socklen);
 
-			disp(LOG_DEBUG, "proc_client(): Receive buffer contents = %s", buffer);
+			disp(LOG_DEBUG, "client_process(): Receive buffer contents = %s", buffer);
 			
 			if (sizeof(message) - strlen(message) > strlen(buffer))
 			{
@@ -281,17 +281,17 @@ void proc_client(int *arg)
 			char *pos = strstr(message, "\n");
 			if (pos != NULL)
 			{		  		
-				chomp(message);
-				disp(LOG_DEBUG, "proc_client(): Message buffer contents = %s", message);
-				disp(LOG_DEBUG, "proc_client(): Complete message received.");
+				rm_newline(message);
+				disp(LOG_DEBUG, "client_process(): Message buffer contents = %s", message);
+				disp(LOG_DEBUG, "client_process(): Complete message received.");
 		  		
 		  		process_msg(message, sockfd);
 		  		memset(message, 0, 1024);	
 			}
 			else
 			{
-				disp(LOG_DEBUG, "proc_client(): Message buffer contents = %s", message);
-				disp(LOG_DEBUG, "proc_client(): Message still incomplete.");
+				disp(LOG_DEBUG, "client_process(): Message buffer contents = %s", message);
+				disp(LOG_DEBUG, "client_process(): Message still incomplete.");
 			}
 		}
 	}
@@ -322,7 +322,7 @@ void process_msg(char *message, int self_sockfd)
 		
 	list_entry = llist_find_by_sockfd(&list_start, self_sockfd);
 		
-	chomp(message);
+	rm_newline(message);
 	
 	regcomp(&regex_quit, "^/quit$", REG_EXTENDED);
 	regcomp(&regex_nick, "^/nick ([a-zA-Z0-9_]{1,19})$", REG_EXTENDED);
@@ -331,7 +331,7 @@ void process_msg(char *message, int self_sockfd)
 	ret = regexec(&regex_quit, message, 0, NULL, 0);
 	if (ret == 0)
 	{		
-		send_broadcast_msg("%sUser %s has left the chat server.%s\r\n", 
+		send_bc_msg("%sUser %s has left the chat server.%s\r\n", 
 			magenta, list_entry->client_info->nickname, normal);
 		disp(LOG_INFO, "User %s has left the chat server.", list_entry->client_info->nickname);
 		pthread_mutex_lock(&curr_thread_count_mutex);
@@ -370,12 +370,12 @@ void process_msg(char *message, int self_sockfd)
 		if (nick_list_entry == NULL)
 		{
 			change_nickname(oldnick, newnick);
-			send_broadcast_msg("%s%s%s\r\n", yellow, buffer, normal);
+			send_bc_msg("%s%s%s\r\n", yellow, buffer, normal);
 			disp(LOG_INFO, buffer);
 		}
 		else
 		{
-			send_private_msg(oldnick, "%sCHATSRV: Cannot change nickname. Nickname already in use.%s\r\n", 
+			send_pvt_msg(oldnick, "%sCHATSRV: Cannot change nickname. Nickname already in use.%s\r\n", 
 				yellow, normal);
 			disp(LOG_INFO, "Private message from CHATSRV to %s: Cannot change nickname. Nickname already in use", 
 				oldnick);
@@ -396,7 +396,7 @@ void process_msg(char *message, int self_sockfd)
 		priv_list_entry = llist_find_by_nickname(&list_start, priv_nick);
 		if (priv_list_entry != NULL)
 		{
-			send_private_msg(priv_nick, "%s%s:%s %s%s%s\r\n", green, list_entry->client_info->nickname, 
+			send_pvt_msg(priv_nick, "%s%s:%s %s%s%s\r\n", green, list_entry->client_info->nickname, 
 				normal, red, buffer, normal);
 			disp(LOG_INFO, "Private message from %s to %s: %s", 
 				list_entry->client_info->nickname, priv_nick, buffer);
@@ -405,7 +405,7 @@ void process_msg(char *message, int self_sockfd)
 		
 	if (processed == FALSE)
 	{
-		send_broadcast_msg("%s%s:%s %s\r\n", green, list_entry->client_info->nickname, normal, message);
+		send_bc_msg("%s%s:%s %s\r\n", green, list_entry->client_info->nickname, normal, message);
 		disp(LOG_INFO, "%s: %s", list_entry->client_info->nickname, message);
 	}
 
@@ -417,7 +417,7 @@ void process_msg(char *message, int self_sockfd)
 
 }
 
-void send_welcome_msg(int sockfd)
+void send_wlcm_msg(int sockfd)
 {
 	int socklen = 0;
 	struct list_entry *cur = NULL;
@@ -437,7 +437,7 @@ void send_welcome_msg(int sockfd)
 }
 
 
-void send_broadcast_msg(char* format, ...)
+void send_bc_msg(char* format, ...)
 {
 	int socklen = 0;
 	//client_info *cur = NULL;
@@ -470,7 +470,7 @@ void send_broadcast_msg(char* format, ...)
 }
 
 
-void send_private_msg(char* nickname, char* format, ...)
+void send_pvt_msg(char* nickname, char* format, ...)
 {
 	int socklen = 0;
 	struct list_entry *cur = NULL;
@@ -495,7 +495,7 @@ void send_private_msg(char* nickname, char* format, ...)
 }
 
 
-void chomp(char *s) 
+void rm_newline(char *s) 
 {
 	while(*s && *s != '\n' && *s != '\r') s++;
 
