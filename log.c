@@ -7,7 +7,7 @@
 
 static int global_loglevel = LOG_INFO;
 
-void logline(int loglevel, const char* format, ...) 
+void disp(int loglevel, const char* format, ...) 
 {
 	va_list args;
 		
@@ -30,7 +30,7 @@ void logline(int loglevel, const char* format, ...)
 	}
 }
 
-void set_loglevel(int loglevel)
+void set_log_level(int loglevel)
 {
 	if ((loglevel == LOG_ERROR) || (loglevel == LOG_INFO) || (loglevel == LOG_DEBUG))
 	{

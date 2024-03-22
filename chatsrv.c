@@ -73,10 +73,10 @@ int main(int argc, char *argv[])
 	
 	switch (params->loglevel)
 	{
-		case 1: set_loglevel(LOG_ERROR); break;
-		case 2: set_loglevel(LOG_INFO); break;
-		case 3: set_loglevel(LOG_DEBUG); break;
-		default: set_loglevel(LOG_ERROR);
+		case 1: set_log_level(LOG_ERROR); break;
+		case 2: set_log_level(LOG_INFO); break;
+		case 3: set_log_level(LOG_DEBUG); break;
+		default: set_log_level(LOG_ERROR);
 	}
 	
 	signal(SIGINT, shutdown_server);
@@ -84,29 +84,29 @@ int main(int argc, char *argv[])
 		
 	if (startup_server() < 0)
 	{
-		logline(LOG_ERROR, "Error during server startup. Please consult debug log for details.");
+		disp(LOG_ERROR, "Error during server startup. Please consult debug log for details.");
 		exit(-1);
 	}
 		
-	logline(LOG_INFO, "Server listening on %s, port %d", params->ip, params->port);
+	disp(LOG_INFO, "Server listening on %s, port %d", params->ip, params->port);
 	switch (params->loglevel)
 	{
-		case LOG_ERROR: logline(LOG_INFO, "Log level set to ERROR"); break;
-		case LOG_INFO: logline(LOG_INFO, "Log level set to INFO"); break;
-		case LOG_DEBUG: logline(LOG_INFO, "Log level set to DEBUG"); break;
-		default: logline(LOG_INFO, "Unknown log level specified"); break;
+		case LOG_ERROR: disp(LOG_INFO, "Log level set to ERROR"); break;
+		case LOG_INFO: disp(LOG_INFO, "Log level set to INFO"); break;
+		case LOG_DEBUG: disp(LOG_INFO, "Log level set to DEBUG"); break;
+		default: disp(LOG_INFO, "Unknown log level specified"); break;
 	}
 		
 	while (1)
 	{
-		logline(LOG_INFO, "Waiting for incoming connection...");
+		disp(LOG_INFO, "Waiting for incoming connection...");
 			
 		client_len = sizeof(client_address);
 		client_sockfd = accept(server_sockfd, (struct sockaddr *)&client_address, (socklen_t *)&client_len);
 
 		if (client_sockfd > 0)
 		{
-			logline(LOG_INFO, "Server accepted new connection on socket id %d", client_sockfd);
+			disp(LOG_INFO, "Server accepted new connection on socket id %d", client_sockfd);
 			
 			/* A connection between a client and the server has been established.
 			 * Now create a new thread and handover the client_sockfd
@@ -132,8 +132,8 @@ int main(int argc, char *argv[])
 					pthread_detach(threads[curr_thread_count]);
 					curr_thread_count++;
 															
-					logline(LOG_INFO, "User %s joined the chat.", ci->nickname);	
-					logline(LOG_DEBUG, "main(): Connections used: %d of %d", curr_thread_count, MAX_THREADS);
+					disp(LOG_INFO, "User %s joined the chat.", ci->nickname);	
+					disp(LOG_DEBUG, "main(): Connections used: %d of %d", curr_thread_count, MAX_THREADS);
 				}
 				else
 				{
@@ -143,7 +143,7 @@ int main(int argc, char *argv[])
 			}
 			else
 			{
-				logline(LOG_ERROR, "Max. connections reached. Connection limit is %d. Connection dropped.", MAX_THREADS);
+				disp(LOG_ERROR, "Max. connections reached. Connection limit is %d. Connection dropped.", MAX_THREADS);
 				close(client_sockfd);
 			}
 			pthread_mutex_unlock(&curr_thread_count_mutex);
@@ -170,7 +170,7 @@ int startup_server(void)
 	server_sockfd = socket(AF_INET, SOCK_STREAM, 0);
 	if (setsockopt(server_sockfd, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof optval) != 0)
 	{
-		logline(LOG_DEBUG, "Error calling setsockopt(): %s", strerror(errno));
+		disp(LOG_DEBUG, "Error calling setsockopt(): %s", strerror(errno));
 		return -1;
 	}
 	
@@ -180,13 +180,13 @@ int startup_server(void)
 	server_len = sizeof(server_address);
 	if (bind(server_sockfd, (struct sockaddr *)&server_address, server_len) != 0)
 	{
-		logline(LOG_DEBUG, "Error calling bind(): %s", strerror(errno));
+		disp(LOG_DEBUG, "Error calling bind(): %s", strerror(errno));
 		return -2;
 	}
 	
 	if (listen(server_sockfd, 5) != 0)
 	{
-		logline(LOG_DEBUG, "Error calling listen(): %s", strerror(errno));
+		disp(LOG_DEBUG, "Error calling listen(): %s", strerror(errno));
 		return -3;
 	}
 
@@ -264,7 +264,7 @@ void proc_client(int *arg)
 			(fd_set *)0, (struct timeval *) 0);
 		if (ret == -1)
 		{
-			logline(LOG_ERROR, "Error calling select() on thread.");
+			disp(LOG_ERROR, "Error calling select() on thread.");
 			perror(strerror(errno));
 		}
 		else
@@ -274,7 +274,7 @@ void proc_client(int *arg)
 			len = recvfrom(sockfd, buffer, sizeof(buffer), 0, 
 				(struct sockaddr *)&list_entry->client_info->address, (socklen_t *)&socklen);
 
-			logline(LOG_DEBUG, "proc_client(): Receive buffer contents = %s", buffer);
+			disp(LOG_DEBUG, "proc_client(): Receive buffer contents = %s", buffer);
 			
 			if (sizeof(message) - strlen(message) > strlen(buffer))
 			{
@@ -285,16 +285,16 @@ void proc_client(int *arg)
 			if (pos != NULL)
 			{		  		
 				chomp(message);
-				logline(LOG_DEBUG, "proc_client(): Message buffer contents = %s", message);
-				logline(LOG_DEBUG, "proc_client(): Complete message received.");
+				disp(LOG_DEBUG, "proc_client(): Message buffer contents = %s", message);
+				disp(LOG_DEBUG, "proc_client(): Complete message received.");
 		  		
 		  		process_msg(message, sockfd);
 		  		memset(message, 0, 1024);	
 			}
 			else
 			{
-				logline(LOG_DEBUG, "proc_client(): Message buffer contents = %s", message);
-				logline(LOG_DEBUG, "proc_client(): Message still incomplete.");
+				disp(LOG_DEBUG, "proc_client(): Message buffer contents = %s", message);
+				disp(LOG_DEBUG, "proc_client(): Message still incomplete.");
 			}
 		}
 	}
@@ -336,13 +336,13 @@ void process_msg(char *message, int self_sockfd)
 	{		
 		send_broadcast_msg("%sUser %s has left the chat server.%s\r\n", 
 			color_magenta, list_entry->client_info->nickname, color_normal);
-		logline(LOG_INFO, "User %s has left the chat server.", list_entry->client_info->nickname);
+		disp(LOG_INFO, "User %s has left the chat server.", list_entry->client_info->nickname);
 		pthread_mutex_lock(&curr_thread_count_mutex);
 		curr_thread_count--;
-		logline(LOG_DEBUG, "process_msg(): Connections used: %d of %d", curr_thread_count, MAX_THREADS);
+		disp(LOG_DEBUG, "process_msg(): Connections used: %d of %d", curr_thread_count, MAX_THREADS);
 		pthread_mutex_unlock(&curr_thread_count_mutex);
 		
-		logline(LOG_DEBUG, "process_msg(): Removing element with sockfd = %d", self_sockfd);
+		disp(LOG_DEBUG, "process_msg(): Removing element with sockfd = %d", self_sockfd);
 		llist_remove_by_sockfd(&list_start, self_sockfd);
 		
 		close(self_sockfd);
@@ -374,13 +374,13 @@ void process_msg(char *message, int self_sockfd)
 		{
 			change_nickname(oldnick, newnick);
 			send_broadcast_msg("%s%s%s\r\n", color_yellow, buffer, color_normal);
-			logline(LOG_INFO, buffer);
+			disp(LOG_INFO, buffer);
 		}
 		else
 		{
 			send_private_msg(oldnick, "%sCHATSRV: Cannot change nickname. Nickname already in use.%s\r\n", 
 				color_yellow, color_normal);
-			logline(LOG_INFO, "Private message from CHATSRV to %s: Cannot change nickname. Nickname already in use", 
+			disp(LOG_INFO, "Private message from CHATSRV to %s: Cannot change nickname. Nickname already in use", 
 				oldnick);
 		}
 	}
@@ -401,7 +401,7 @@ void process_msg(char *message, int self_sockfd)
 		{
 			send_private_msg(priv_nick, "%s%s:%s %s%s%s\r\n", color_green, list_entry->client_info->nickname, 
 				color_normal, color_red, buffer, color_normal);
-			logline(LOG_INFO, "Private message from %s to %s: %s", 
+			disp(LOG_INFO, "Private message from %s to %s: %s", 
 				list_entry->client_info->nickname, priv_nick, buffer);
 		}
 	}
@@ -409,7 +409,7 @@ void process_msg(char *message, int self_sockfd)
 	if (processed == FALSE)
 	{
 		send_broadcast_msg("%s%s:%s %s\r\n", color_green, list_entry->client_info->nickname, color_normal, message);
-		logline(LOG_INFO, "%s: %s", list_entry->client_info->nickname, message);
+		disp(LOG_INFO, "%s: %s", list_entry->client_info->nickname, message);
 	}
 
 	llist_show(&list_start);
@@ -512,13 +512,13 @@ void change_nickname(char *oldnickname, char *newnickname)
 	client_info *ci_new = NULL;
 	int idx = 0;
 	
-	logline(LOG_DEBUG, "change_nickname(): oldnickname = %s, newnickname = %s", oldnickname, newnickname);
+	disp(LOG_DEBUG, "change_nickname(): oldnickname = %s, newnickname = %s", oldnickname, newnickname);
 		
 	list_entry = llist_find_by_nickname(&list_start, oldnickname);
 		
 	pthread_mutex_lock(list_entry->mutex);
 	
-	logline(LOG_DEBUG, "change_nickname(): client_info found. client_info->nickname = %s", 
+	disp(LOG_DEBUG, "change_nickname(): client_info found. client_info->nickname = %s", 
 		list_entry->client_info->nickname);
 	
 	strcpy(list_entry->client_info->nickname, newnickname);
@@ -531,7 +531,7 @@ void shutdown_server(int sig)
 {
 	list_entry *cur = NULL;
 		
-		logline(LOG_INFO, "Closing socket connections...");		
+		disp(LOG_INFO, "Closing socket connections...");		
 				
 		cur = &list_start;
 		while (cur != NULL)
@@ -548,10 +548,10 @@ void shutdown_server(int sig)
 			cur = cur->next;
 		}		
 				
-		logline(LOG_INFO, "Shutting down listener...");
+		disp(LOG_INFO, "Shutting down listener...");
 		close(server_sockfd);
 				
-		logline(LOG_INFO, "Exiting. Byebye.");
+		disp(LOG_INFO, "Exiting. Byebye.");
 		exit(0);
 
 }

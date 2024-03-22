@@ -5,7 +5,7 @@
 #define LOG_INFO  2
 #define LOG_DEBUG 3
 
-void logline(int loglevel, const char* format, ...);
-void set_loglevel(int loglevel);
+void disp(int loglevel, const char* format, ...);
+void set_log_level(int loglevel);
 
 #endif

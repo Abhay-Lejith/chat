@@ -199,21 +199,21 @@ int llist_show(list_entry *list_start)
 
 	cur = list_start;
 	
-	logline(LOG_DEBUG, "---------- Client List Dump Begin ----------");
+	disp(LOG_DEBUG, "---------- Client List Dump Begin ----------");
 	while (cur != NULL)
 	{		
 		pthread_mutex_lock(cur->mutex);
 				
 		if (cur->client_info != NULL)
 		{
-			logline(LOG_DEBUG, "sockfd = %d, nickname = %s", cur->client_info->sockfd, cur->client_info->nickname);
+			disp(LOG_DEBUG, "sockfd = %d, nickname = %s", cur->client_info->sockfd, cur->client_info->nickname);
 		}
 				
 		pthread_mutex_unlock(cur->mutex);
 				
 		cur = cur->next;
 	}
-	logline(LOG_DEBUG, "----------- Client List Dump End -----------");
+	disp(LOG_DEBUG, "----------- Client List Dump End -----------");
 	
 	return 0;
 }
