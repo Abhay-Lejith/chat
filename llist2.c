@@ -8,9 +8,7 @@
 #define TRUE            1
 #define FALSE           0
 
-/*
- * Initializes the first element of the list.
- */
+
 void llist_init(list_entry *list_start)
 {
 	list_start->client_info = NULL;
@@ -19,10 +17,6 @@ void llist_init(list_entry *list_start)
 	pthread_mutex_init(list_start->mutex, NULL);
 }
 
-
-/*
- * Inserts a new client_info element at the end of the list.
- */
 int llist_insert(list_entry *list_start, client_info *element)
 {
 	list_entry *cur, *prev;
@@ -32,10 +26,8 @@ int llist_insert(list_entry *list_start, client_info *element)
 	
 	while (cur != NULL)
 	{
-		/* Lock entry */
 		pthread_mutex_lock(cur->mutex);	
 	
-		/* Delete client_info data if sockfd matches */
 		if (cur->client_info == NULL)
 		{
 			cur->client_info = element;
@@ -44,33 +36,25 @@ int llist_insert(list_entry *list_start, client_info *element)
 			break;
 		}
 	
-		/* Unlock entry */
 		pthread_mutex_unlock(cur->mutex);
 	
-		/* Load next entry */
 		prev = cur;
 		cur = cur->next;
 	}
 	
-	/* During iteration through list, no existing element could be reused.
-	 * We therefore need to append a new list_entry to the list.
-	 */
 	if (inserted == FALSE)
 	{
-		/* Lock last entry again */
+
 		pthread_mutex_lock(prev->mutex);
-	
-		/* Create new list entry */	
+				
 		list_entry *new_entry = (list_entry *)malloc(sizeof(list_entry));
 		new_entry->client_info = element;
 		new_entry->next = NULL;
 		new_entry->mutex = (pthread_mutex_t *)malloc(sizeof(pthread_mutex_t));	
 		pthread_mutex_init(new_entry->mutex, NULL);
-	
-		/* Append entry */
+			
 		prev->next = new_entry;
-		
-		/* Unlock list entry */
+				
 		pthread_mutex_unlock(prev->mutex);
 	
 		inserted = TRUE;
@@ -86,10 +70,6 @@ int llist_insert(list_entry *list_start, client_info *element)
 	}
 }
 
-
-/*
- * Removes a client_info element by sockfd.
- */
 int llist_remove_by_sockfd(list_entry *list_start, int sockfd)
 {
 	list_entry *cur;
@@ -98,14 +78,12 @@ int llist_remove_by_sockfd(list_entry *list_start, int sockfd)
 	
 	while (cur != NULL)
 	{
-		/* Lock entry */
+		
 		pthread_mutex_lock(cur->mutex);	
-	
-		/* Need to check if there's client in node */
+			
 		if (cur->client_info != NULL)
 		{
-
-			/* Delete client_info data if sockfd matches */
+			
 			if (cur->client_info->sockfd == sockfd)
 			{
 				cur->client_info = NULL;
@@ -114,11 +92,9 @@ int llist_remove_by_sockfd(list_entry *list_start, int sockfd)
 			}
 
 		}
-	
-		/* Unlock entry */
+			
 		pthread_mutex_unlock(cur->mutex);
-	
-		/* Load next entry */
+			
 		cur = cur->next;
 	}
 
@@ -126,9 +102,6 @@ int llist_remove_by_sockfd(list_entry *list_start, int sockfd)
 }
 
 
-/*
- * Find a client_info element by sockfd.
- */
 list_entry* llist_find_by_sockfd(list_entry *list_start, int sockfd)
 {
 	list_entry *cur;
@@ -136,15 +109,12 @@ list_entry* llist_find_by_sockfd(list_entry *list_start, int sockfd)
 	cur = list_start;
 	
 	while (cur != NULL)
-	{
-		/* Lock entry */
+	{		
 		pthread_mutex_lock(cur->mutex);	
-
-		/* Need to check if there's client in node */
+		
 		if (cur->client_info != NULL)
 		{
-	
-			/* Delete client_info data if sockfd matches */
+				
 			if (cur->client_info->sockfd == sockfd)
 			{
 				pthread_mutex_unlock(cur->mutex);
@@ -152,11 +122,9 @@ list_entry* llist_find_by_sockfd(list_entry *list_start, int sockfd)
 			}
 
 		}
-
-		/* Unlock entry */
-		pthread_mutex_unlock(cur->mutex);
 	
-		/* Load next entry */
+		pthread_mutex_unlock(cur->mutex);
+			
 		cur = cur->next;
 	}
 	
@@ -171,15 +139,12 @@ list_entry* llist_find_by_nickname(list_entry *list_start, char *nickname)
 	cur = list_start;
 	
 	while (cur != NULL)
-	{
-		/* Lock entry */
+	{		
 		pthread_mutex_lock(cur->mutex);	
-
-		/* Need to check if there's client in node */
+		
 		if (cur->client_info != NULL)
 		{
-	
-			/* Delete client_info data if sockfd matches */
+				
 			if (strcmp(cur->client_info->nickname, nickname) == 0)
 			{
 				pthread_mutex_unlock(cur->mutex);
@@ -187,11 +152,9 @@ list_entry* llist_find_by_nickname(list_entry *list_start, char *nickname)
 			}
 
 		}
-	
-		/* Unlock entry */
+			
 		pthread_mutex_unlock(cur->mutex);
-	
-		/* Load next entry */
+			
 		cur = cur->next;
 	}
 	
@@ -199,9 +162,6 @@ list_entry* llist_find_by_nickname(list_entry *list_start, char *nickname)
 }
 
 
-/*
- * Replace a client_info element by sockfd.
- */
 int llist_change_by_sockfd(list_entry *list_start, client_info *element, int sockfd)
 {
 	list_entry *cur;
@@ -209,15 +169,12 @@ int llist_change_by_sockfd(list_entry *list_start, client_info *element, int soc
 	cur = list_start;
 	
 	while (cur != NULL)
-	{
-		/* Lock entry */
+	{		
 		pthread_mutex_lock(cur->mutex);	
-
-		/* Need to check if there's client in node */
+		
 		if (cur->client_info != NULL)
 		{
-	
-			/* Delete client_info data if sockfd matches */
+				
 			if (cur->client_info->sockfd == sockfd)
 			{
 				cur->client_info = element;
@@ -226,11 +183,9 @@ int llist_change_by_sockfd(list_entry *list_start, client_info *element, int soc
 			}
 
 		}
-	
-		/* Unlock entry */
+			
 		pthread_mutex_unlock(cur->mutex);
-	
-		/* Load next entry */
+			
 		cur = cur->next;
 	}
 
@@ -238,9 +193,6 @@ int llist_change_by_sockfd(list_entry *list_start, client_info *element, int soc
 }
 
 
-/*
- * Display elements in linked list.
- */
 int llist_show(list_entry *list_start)
 {
 	list_entry *cur;
@@ -249,20 +201,16 @@ int llist_show(list_entry *list_start)
 	
 	logline(LOG_DEBUG, "---------- Client List Dump Begin ----------");
 	while (cur != NULL)
-	{
-		/* Lock entry */
+	{		
 		pthread_mutex_lock(cur->mutex);
-		
-		/* Display client info */
+				
 		if (cur->client_info != NULL)
 		{
 			logline(LOG_DEBUG, "sockfd = %d, nickname = %s", cur->client_info->sockfd, cur->client_info->nickname);
 		}
-		
-		/* Unlock entry */
+				
 		pthread_mutex_unlock(cur->mutex);
-		
-		/* Load next entry */
+				
 		cur = cur->next;
 	}
 	logline(LOG_DEBUG, "----------- Client List Dump End -----------");
@@ -271,9 +219,6 @@ int llist_show(list_entry *list_start)
 }
 
 
-/*
- * Get number of client_info elements in list.
- */
 int llist_get_count(list_entry *list_start)
 {
 	list_entry *cur;
@@ -283,28 +228,22 @@ int llist_get_count(list_entry *list_start)
 	
 	while (cur != NULL)
 	{
-		/* Lock entry */
-		pthread_mutex_lock(cur->mutex);		
 		
-		/* Increase count if client_info not null */
+		pthread_mutex_lock(cur->mutex);		
+				
 		if (cur->client_info != NULL)
 		{
 			count++;
 		}
-		
-		/* Unlock entry */
+				
 		pthread_mutex_unlock(cur->mutex);
-		
-		/* Load next entry */	
+					
 		cur = cur->next;
 	}
 	
 	return count;
 }
 
-/*
- * Build string array of currently connected clients
- */
 int llist_get_nicknames(list_entry *list_start, char **nicks)
 {
 	list_entry *cur;
@@ -314,20 +253,16 @@ int llist_get_nicknames(list_entry *list_start, char **nicks)
 	int count = 0;
 	
 	while (cur != NULL)
-	{
-		/* Lock entry */
+	{		
 		pthread_mutex_lock(cur->mutex);
-		
-		/* Display client info */
+				
 		if (cur->client_info != NULL)
 		{
 			strncpy(nicks[count++], cur->client_info->nickname, 20);
 		}
-		
-		/* Unlock entry */
+				
 		pthread_mutex_unlock(cur->mutex);
-		
-		/* Load next entry */
+				
 		cur = cur->next;
 	}
 	
